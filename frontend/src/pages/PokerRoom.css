@@ -1,0 +1,335 @@
+.poker-room {
+  display: flex;
+  flex-direction: column;
+}
+
+.facilitator-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.poker-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 100px;
+  margin-top: 32px;
+}
+
+.virtual-table {
+  position: relative;
+  width: 450px;
+  height: 220px;
+  background: var(--bg-card);
+  border-radius: 120px;
+  border: 4px solid var(--border-color);
+  box-shadow: var(--shadow-lg), inset 0 0 40px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.consensus-result, .final-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.consensus-result span, .final-result span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.consensus-badge, .agreed-badge {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--accent-success);
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.agreed-badge {
+  color: var(--accent-primary);
+  text-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.divergence-alert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid var(--accent-warning);
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.divergence-text {
+  color: var(--accent-warning);
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.facilitator-decision {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.decision-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.decision-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-warning);
+  color: var(--accent-warning);
+  font-weight: bold;
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.decision-btn:hover {
+  background: var(--accent-warning);
+  color: #000;
+}
+
+.participants-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+
+.participant {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 80px;
+  margin-left: -40px;
+  margin-top: -60px;
+}
+
+.participant-card-slot {
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.poker-card {
+  width: 40px;
+  height: 56px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.poker-card.hidden {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+}
+
+.poker-card.revealed {
+  background: white;
+  color: var(--bg-primary);
+}
+
+.poker-card.empty {
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--text-muted);
+}
+
+/* Pulsating Animation for Highest Vote */
+@keyframes pulseHighVote {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.15) translateY(-5px);
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
+    border-color: rgba(239, 68, 68, 1);
+    color: var(--accent-danger);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+.pulsating-high-vote {
+  animation: pulseHighVote 1.5s infinite ease-in-out;
+}
+
+.participant-name {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.my-cards-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+  position: relative;
+  z-index: 30;
+}
+
+.cards-deck {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 600px;
+}
+
+.poker-card-btn {
+  width: 50px;
+  height: 75px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+.poker-card-btn:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  transform: translateY(-8px);
+}
+
+.poker-card-btn.selected {
+  background: var(--accent-primary);
+  color: white;
+  transform: translateY(-16px);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+}
+
+.poker-card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Reactions and Empty Seats */
+.reaction-panel {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-card);
+  padding: 8px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.reaction-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.reaction-btn:hover:not(:disabled) {
+  transform: scale(1.3);
+}
+
+.reaction-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+@keyframes floatUpAndFade {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-20px) scale(1.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-80px) scale(1);
+    opacity: 0;
+  }
+}
+
+.floating-reaction {
+  position: absolute;
+  top: -20px;
+  font-size: 1.8rem;
+  animation: floatUpAndFade 2s ease-out forwards;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.participant-slot.empty {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  margin-left: -30px;
+  margin-top: -30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.participant-slot.empty:hover {
+  border-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.participant-slot.empty span {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+  opacity: 0;
+  transition: opacity 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.participant-slot.empty:hover span {
+  opacity: 1;
+}

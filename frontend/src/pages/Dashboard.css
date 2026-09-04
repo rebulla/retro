@@ -1,0 +1,119 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: var(--shadow-glow);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.sprint-overview {
+  grid-column: 1 / -1; /* spans full width */
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(30,31,42,0.8), rgba(99,102,241,0.1));
+}
+
+.sprint-overview h3 {
+  font-size: 1.5rem;
+  color: var(--accent-primary);
+}
+
+.sprint-theme {
+  font-size: 1.25rem;
+  display: flex;
+  gap: 8px;
+}
+
+.action-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.roulette-icon {
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  font-size: 32px !important;
+}
+
+.dashboard-kudos-card {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-overlay-hint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+
+.dashboard-kudos-card:hover .card-overlay-hint {
+  opacity: 1;
+}
+
+.kudos-icon { background: linear-gradient(135deg, #FF6B6B, #FF8E53); }
+.retro-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+.poker-icon { background: linear-gradient(135deg, #43e97b, #38f9d7); }

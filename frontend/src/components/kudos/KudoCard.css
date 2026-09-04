@@ -1,0 +1,257 @@
+.kudo-card {
+  position: relative;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.kudo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.kudo-actions-top {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.kudo-card:hover .kudo-actions-top {
+  opacity: 1;
+}
+
+.kudo-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kudo-action-btn.edit:hover {
+  color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.kudo-action-btn.delete:hover {
+  color: var(--accent-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.kudo-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-right: 48px; /* space for absolute actions */
+}
+
+.kudo-avatar-container {
+  position: relative;
+}
+
+.kudo-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-primary);
+  object-fit: cover;
+}
+
+.kudo-badge-emoji {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: var(--shadow-sm);
+  cursor: help;
+  transition: transform 0.2s ease;
+}
+
+.kudo-badge-emoji:hover {
+  transform: scale(1.1);
+}
+
+.kudo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kudo-to {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.kudo-to strong {
+  color: var(--text-primary);
+  font-size: 1.15rem;
+}
+
+.kudo-from {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.kudo-body {
+  flex: 1;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.kudo-body p {
+  margin: 0;
+  font-style: italic;
+  position: relative;
+  border-radius: 6px;
+  padding: 4px;
+  margin: -4px;
+  transition: background 0.2s ease;
+}
+
+.kudo-body p:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.kudo-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kudo-edit-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-primary);
+  color: var(--text-primary);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.kudo-edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.kudo-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.kudo-btn-save, .kudo-btn-cancel {
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.kudo-btn-save {
+  background: var(--accent-success);
+  color: white;
+}
+
+.kudo-btn-save:hover {
+  opacity: 0.9;
+}
+
+.kudo-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.kudo-btn-cancel:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+}
+
+.kudo-footer {
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+  margin-top: 8px;
+}
+
+.kudo-vote-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 16px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.kudo-vote-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.kudo-vote-btn.voted {
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.1);
+}
+
+.kudo-vote-btn.voted .fill-current {
+  fill: currentColor;
+}
+
+.voters-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+}
+
+.kudo-vote-btn:hover + .voters-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
