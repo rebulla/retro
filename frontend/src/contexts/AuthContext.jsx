@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, googleProvider } from '../config/firebase';
-import { onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut, updateProfile } from 'firebase/auth';
 import LoadingScreen from '../components/common/LoadingScreen';
 
 const AuthContext = createContext();
@@ -14,21 +14,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle redirect result when returning from Google login
-    getRedirectResult(auth).then((result) => {
-      if (result?.user) {
-        localStorage.setItem('lastGoogleUser', JSON.stringify({
-          name: result.user.displayName,
-          email: result.user.email,
-          avatar: result.user.photoURL
-        }));
-      }
-    }).catch((error) => {
-      if (error.code !== 'auth/no-auth-event') {
-        console.error('Redirect result error:', error);
-      }
-    });
-
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser({
@@ -62,7 +47,14 @@ export const AuthProvider = ({ children }) => {
       } else {
         googleProvider.setCustomParameters({});
       }
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result?.user) {
+        localStorage.setItem('lastGoogleUser', JSON.stringify({
+          name: result.user.displayName,
+          email: result.user.email,
+          avatar: result.user.photoURL
+        }));
+      }
     } catch (error) {
       console.error("Erro no login com Google:", error);
     }
