@@ -20,9 +20,19 @@ let rouletteParticipants = {};
 let isSpinning = false;
 
 const initSocket = (server) => {
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean);
+
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error(`CORS blocked: ${origin}`));
+      },
       methods: ["GET", "POST"],
       credentials: true
     }
