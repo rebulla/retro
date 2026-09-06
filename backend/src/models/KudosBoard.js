@@ -17,6 +17,7 @@ const kudoItemSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const kudosBoardSchema = new mongoose.Schema({
+  squadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Squad' },
   sprintId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sprint', required: true },
   title: { type: String, default: 'Mural de Kudos' },
   introduction: { type: String, default: 'Reconheça e celebre as conquistas da sua equipe nesta Sprint!' },

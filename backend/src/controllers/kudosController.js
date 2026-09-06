@@ -4,7 +4,10 @@ const { getIo } = require('../config/socket');
 
 exports.getAllKudosBoards = async (req, res) => {
   try {
-    const boards = await KudosBoard.find().populate('sprintId', 'name theme').sort({ createdAt: -1 });
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
+    const boards = await KudosBoard.find({ squadId }).populate('sprintId', 'name theme').sort({ createdAt: -1 });
     res.json(boards);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar murais de kudos', error });
@@ -23,11 +26,15 @@ exports.getKudosBoardById = async (req, res) => {
 
 exports.createKudosBoard = async (req, res) => {
   try {
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
     let sprintId = req.body.sprintId;
     
     // Auto-create a sprint if none exists
     if (!sprintId) {
        const sprint = await Sprint.create({
+         squadId,
          name: req.body.sprintName || `Sprint ${new Date().toLocaleDateString()}`,
          startDate: new Date(),
          endDate: new Date(new Date().setDate(new Date().getDate() + 14)),
@@ -37,6 +44,7 @@ exports.createKudosBoard = async (req, res) => {
     }
 
     const newBoard = new KudosBoard({
+      squadId,
       sprintId,
       title: req.body.title || 'Mural de Kudos',
       introduction: req.body.introduction || 'Reconheça e celebre as conquistas da sua equipe nesta Sprint!',

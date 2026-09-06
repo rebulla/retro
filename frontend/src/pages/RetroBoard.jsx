@@ -10,7 +10,7 @@ import * as retroService from '../services/retroService';
 import './RetroBoard.css';
 
 const RetroBoard = () => {
-  const { user } = useAuth();
+  const { user, activeSquad } = useAuth();
   const socket = useSocket();
   const [retros, setRetros] = useState([]);
   const [currentRetro, setCurrentRetro] = useState(null);
@@ -23,8 +23,14 @@ const RetroBoard = () => {
   );
 
   useEffect(() => {
-    fetchRetros();
-  }, []);
+    if (activeSquad) {
+      fetchRetros();
+    } else {
+      setRetros([]);
+      setCurrentRetro(null);
+      setLoading(false);
+    }
+  }, [activeSquad]);
 
   useEffect(() => {
     if (!socket || !currentRetro) return;

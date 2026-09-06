@@ -10,7 +10,7 @@ import { Columns, Spade } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, activeSquad } = useAuth();
   
   const [sprint, setSprint] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,8 +24,12 @@ const Dashboard = () => {
         console.error('Erro ao carregar a sprint ativa:', err);
       }
     };
-    fetchSprint();
-  }, []);
+    if (activeSquad) {
+      fetchSprint();
+    } else {
+      setSprint(null);
+    }
+  }, [activeSquad]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';

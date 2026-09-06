@@ -31,10 +31,16 @@ const retroRoutes = require('./routes/retroRoutes');
 const kudosRoutes = require('./routes/kudosRoutes');
 const sprintRoutes = require('./routes/sprintRoutes');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const squadRoutes = require('./routes/squadRoutes');
 
 app.use('/api/retrospectives', retroRoutes);
 app.use('/api/kudos', kudosRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/squads', squadRoutes);
 
 module.exports = app;

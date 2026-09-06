@@ -9,7 +9,7 @@ import * as kudosService from '../services/kudosService';
 import './KudosWall.css';
 
 const KudosWall = () => {
-  const { user } = useAuth();
+  const { user, activeSquad } = useAuth();
   const socket = useSocket();
   const [boards, setBoards] = useState([]);
   const [currentBoard, setCurrentBoard] = useState(null);
@@ -18,8 +18,14 @@ const KudosWall = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBoards();
-  }, []);
+    if (activeSquad) {
+      fetchBoards();
+    } else {
+      setBoards([]);
+      setCurrentBoard(null);
+      setLoading(false);
+    }
+  }, [activeSquad]);
 
   useEffect(() => {
     if (!socket || !currentBoard) return;

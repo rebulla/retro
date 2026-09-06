@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getKudosBoards } from '../../services/kudosService';
 import KudoCard from '../kudos/KudoCard';
+import { useAuth } from '../../contexts/AuthContext';
 import './DashboardComponents.css';
 
 const KudosCarousel = () => {
+  const { activeSquad } = useAuth();
   const [kudos, setKudos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -20,8 +22,12 @@ const KudosCarousel = () => {
         console.error("Erro ao carregar kudos:", error);
       }
     };
-    fetchKudos();
-  }, []);
+    if (activeSquad) {
+      fetchKudos();
+    } else {
+      setKudos([]);
+    }
+  }, [activeSquad]);
 
   useEffect(() => {
     if (kudos.length <= 1) return;

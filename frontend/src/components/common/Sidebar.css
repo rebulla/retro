@@ -102,6 +102,25 @@
   -webkit-text-fill-color: transparent;
 }
 
+.squad-header-select {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #a5b4fc;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  max-width: 150px;
+  text-overflow: ellipsis;
+}
+
+.squad-header-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
 .collapse-btn {
   background: transparent;
   border: none;

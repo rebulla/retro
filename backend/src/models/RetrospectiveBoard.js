@@ -12,6 +12,7 @@ const cardSchema = new mongoose.Schema({
 });
 
 const retrospectiveBoardSchema = new mongoose.Schema({
+  squadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Squad' },
   sprintId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sprint', required: true },
   title: { type: String, default: 'Retrospectiva' },
   backgroundImage: { type: String, default: '' },

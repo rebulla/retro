@@ -51,6 +51,8 @@ const initSocket = (server) => {
       // Initialize room if it doesn't exist
       if (!rooms[roomId]) {
         rooms[roomId] = {
+          id: roomId,
+          squadName: user.squadName || 'Squad Desconhecida',
           status: 'voting',
           finalAgreedVote: null,
           participants: {}
@@ -78,6 +80,44 @@ const initSocket = (server) => {
 
       // Emit updated state to everyone in the room
       io.to(roomId).emit('room_state_update', getSanitizedRoomState(roomId));
+    });
+
+    socket.on('leave_room', ({ roomId }) => {
+      socket.leave(roomId);
+      if (rooms[roomId] && rooms[roomId].participants[socket.id]) {
+        delete rooms[roomId].participants[socket.id];
+        if (Object.keys(rooms[roomId].participants).length === 0) {
+          delete rooms[roomId];
+        } else {
+          io.to(roomId).emit('room_state_update', getSanitizedRoomState(roomId));
+        }
+      }
+    });
+
+    // 1a. Guest Request Join
+    socket.on('request_join', ({ roomId, guestName }) => {
+      // Send a request to everyone in the room (specifically for hosts/admins to see)
+      io.to(roomId).emit('guest_join_request', { guestId: socket.id, guestName, roomId });
+    });
+
+    // 1b. Host Approve Guest
+    socket.on('approve_guest', ({ guestId, roomId }) => {
+      io.to(guestId).emit('guest_approved', { roomId });
+    });
+
+    // 1c. Host Deny Guest
+    socket.on('deny_guest', ({ guestId, roomId }) => {
+      io.to(guestId).emit('guest_denied', { roomId });
+    });
+
+    // 1d. Get Active Rooms (for guests)
+    socket.on('get_active_rooms', () => {
+      const activeRooms = Object.values(rooms).map(r => ({
+        id: r.id,
+        squadName: r.squadName,
+        participantCount: Object.keys(r.participants).length
+      }));
+      socket.emit('active_rooms_list', activeRooms);
     });
 
     // 2. Vote

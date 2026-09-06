@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const sprintSchema = new mongoose.Schema({
+  squadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Squad' }, // Note: we'll make this required later after migration
   name: { type: String, required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },

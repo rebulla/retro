@@ -12,17 +12,61 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeSquad, setActiveSquad] = useState(null);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+  const refreshUser = async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) return;
+    try {
+      const response = await fetch(`${API_URL}/auth/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firebaseUid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          avatar: firebaseUser.photoURL
+        })
+      });
+      
+      if (response.ok) {
+        const dbUser = await response.json();
+        
+        const mappedUser = {
+          id: firebaseUser.uid,
+          dbId: dbUser._id,
+          name: dbUser.name,
+          email: dbUser.email,
+          avatar: dbUser.avatar,
+          role: dbUser.globalRole,
+          status: dbUser.status,
+          squads: dbUser.squads || []
+        };
+        
+        setUser(mappedUser);
+        
+        if (dbUser.squads && dbUser.squads.length > 0) {
+          const savedSquadId = localStorage.getItem('activeSquadId');
+          const foundSquad = dbUser.squads.find(s => s.squad._id === savedSquadId);
+          if (foundSquad) {
+            setActiveSquad(foundSquad.squad);
+          } else {
+            setActiveSquad(dbUser.squads[0].squad);
+            localStorage.setItem('activeSquadId', dbUser.squads[0].squad._id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar usuário com backend:", error);
+    }
+  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName,
-          email: firebaseUser.email,
-          avatar: firebaseUser.photoURL,
-          role: 'admin'
-        });
+        await refreshUser();
         localStorage.removeItem('guestUser');
       } else {
         const savedGuest = localStorage.getItem('guestUser');
@@ -91,6 +135,8 @@ export const AuthProvider = ({ children }) => {
       } else {
         await signOut(auth);
       }
+      setActiveSquad(null);
+      localStorage.removeItem('activeSquadId');
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
@@ -99,10 +145,17 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    activeSquad,
+    setActiveSquad: (squad) => {
+      setActiveSquad(squad);
+      if (squad) localStorage.setItem('activeSquadId', squad._id);
+      else localStorage.removeItem('activeSquadId');
+    },
     loginWithGoogle,
     loginAsGuest,
     logout,
-    updateUserName
+    updateUserName,
+    refreshUser
   };
 
   return (

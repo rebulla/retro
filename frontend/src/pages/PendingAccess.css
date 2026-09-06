@@ -1,0 +1,54 @@
+.pending-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-main);
+  padding: 1rem;
+}
+
+.pending-card {
+  max-width: 500px;
+  width: 100%;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.pending-header {
+  margin-bottom: 2rem;
+}
+
+.pending-header h1 {
+  font-size: 1.8rem;
+  margin-top: 1rem;
+  color: var(--text-primary);
+}
+
+.pending-content {
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.pending-content p {
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.status-badge.pending {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.pending-actions {
+  display: flex;
+  justify-content: center;
+}

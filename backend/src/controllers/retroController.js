@@ -4,7 +4,10 @@ const { getIo } = require('../config/socket');
 
 exports.getAllRetrospectives = async (req, res) => {
   try {
-    const retros = await RetrospectiveBoard.find().populate('sprintId', 'name theme').sort({ createdAt: -1 });
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
+    const retros = await RetrospectiveBoard.find({ squadId }).populate('sprintId', 'name theme').sort({ createdAt: -1 });
     res.json(retros);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar retrospectivas', error });
@@ -23,11 +26,15 @@ exports.getRetrospectiveById = async (req, res) => {
 
 exports.createRetrospective = async (req, res) => {
   try {
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
     let sprintId = req.body.sprintId;
     
     // Auto-create a sprint if none exists
     if (!sprintId) {
        const sprint = await Sprint.create({
+         squadId,
          name: req.body.sprintName || `Sprint ${new Date().toLocaleDateString()}`,
          startDate: new Date(),
          endDate: new Date(new Date().setDate(new Date().getDate() + 14)),
@@ -37,6 +44,7 @@ exports.createRetrospective = async (req, res) => {
     }
 
     const newRetro = new RetrospectiveBoard({
+      squadId,
       sprintId,
       title: req.body.title || 'Nova Retrospectiva',
       backgroundImage: req.body.backgroundImage || '',

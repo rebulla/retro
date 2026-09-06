@@ -1,14 +1,7 @@
-import axios from 'axios';
-
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/sprints`;
-
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true
-});
+import api from './api';
 
 export const getActiveSprint = async () => {
-  const response = await api.get('/active');
+  const response = await api.get('/sprints/active');
   return response.data;
 };
 
@@ -17,22 +10,22 @@ export const updateSprint = async (id, data) => {
   return response.data;
 };
 
-export const createSprint = async (data) => {
-  const response = await api.post('/', data);
+export const createSprint = async (sprintData) => {
+  const response = await api.post('/sprints', sprintData);
   return response.data;
 };
 
 export const getAllSprints = async () => {
-  const response = await api.get('/');
+  const response = await api.get('/sprints');
   return response.data;
 };
 
 export const activateSprint = async (id) => {
-  const response = await api.put(`/${id}/activate`);
+  const response = await api.put(`/sprints/${id}/activate`);
   return response.data;
 };
 
 export const deleteSprint = async (id) => {
-  const response = await api.delete(`/${id}`);
+  const response = await api.delete(`/sprints/${id}`);
   return response.data;
 };

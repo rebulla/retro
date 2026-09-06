@@ -3,8 +3,6 @@ import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import './PokerRoom.css';
 
-const MOCK_ROOM_ID = 'room-123';
-
 const calculateSummary = (participants) => {
   const frequencies = {};
   let maxVote = -1;
@@ -41,16 +39,43 @@ const calculateSummary = (participants) => {
 
 const PokerRoom = () => {
   const socket = useSocket();
-  const { user } = useAuth();
+  const { user, activeSquad } = useAuth();
+  
+  const roomId = activeSquad ? `poker_${activeSquad._id}` : null;
   
   const [roomState, setRoomState] = useState(null);
   const [myVote, setMyVote] = useState(null);
   const [activeReactions, setActiveReactions] = useState([]);
+  
+  // Guest state
+  const [activeRooms, setActiveRooms] = useState([]);
+  const [guestRoomId, setGuestRoomId] = useState(null);
+  const [guestStatus, setGuestStatus] = useState('lobby'); // lobby, requesting, approved, denied
+  
+  // Host state
+  const [joinRequests, setJoinRequests] = useState([]);
 
   useEffect(() => {
     if (!socket || !user) return;
 
-    socket.emit('join_room', { roomId: MOCK_ROOM_ID, user });
+    if (user.role === 'guest') {
+      socket.emit('get_active_rooms');
+      socket.on('active_rooms_list', (rooms) => {
+        setActiveRooms(rooms);
+      });
+      
+      socket.on('guest_approved', ({ roomId: approvedRoomId }) => {
+        setGuestStatus('approved');
+        socket.emit('join_room', { roomId: approvedRoomId, user });
+      });
+      
+      socket.on('guest_denied', () => {
+        setGuestStatus('denied');
+        alert("Seu pedido para entrar foi recusado.");
+      });
+    } else if (roomId) {
+      socket.emit('join_room', { roomId, user: { ...user, squadName: activeSquad?.name } });
+    }
 
     socket.on('room_state_update', (newState) => {
       setRoomState(newState);
@@ -63,6 +88,13 @@ const PokerRoom = () => {
       }
     });
 
+    socket.on('guest_join_request', ({ guestId, guestName, roomId: reqRoomId }) => {
+      // Only host/admin of the room sees this
+      if (user.role !== 'guest' && reqRoomId === roomId) {
+        setJoinRequests(prev => [...prev, { guestId, guestName, reqRoomId }]);
+      }
+    });
+
     socket.on('reaction_received', ({ socketId, reaction }) => {
       const id = Date.now() + Math.random();
       setActiveReactions(prev => [...prev, { id, socketId, reaction }]);
@@ -72,41 +104,101 @@ const PokerRoom = () => {
     });
 
     return () => {
+      if (roomId) {
+        socket.emit('leave_room', { roomId });
+      } else if (guestRoomId) {
+        socket.emit('leave_room', { roomId: guestRoomId });
+      }
+      socket.off('active_rooms_list');
+      socket.off('guest_approved');
+      socket.off('guest_denied');
       socket.off('room_state_update');
+      socket.off('guest_join_request');
       socket.off('reaction_received');
     };
-  }, [socket, user]);
+  }, [socket, user, roomId, activeSquad]);
+
+  const getCurrentRoomId = () => {
+    return user.role === 'guest' ? guestRoomId : roomId;
+  };
 
   const handleVote = (vote) => {
     if (roomState?.status !== 'voting') return;
     setMyVote(vote);
-    socket.emit('vote', { roomId: MOCK_ROOM_ID, voteValue: vote });
+    socket.emit('vote', { roomId: getCurrentRoomId(), voteValue: vote });
   };
 
   const handleReveal = () => {
-    socket.emit('reveal_votes', { roomId: MOCK_ROOM_ID });
+    socket.emit('reveal_votes', { roomId: getCurrentRoomId() });
   };
 
   const handleReset = () => {
-    socket.emit('reset_room', { roomId: MOCK_ROOM_ID });
+    socket.emit('reset_room', { roomId: getCurrentRoomId() });
   };
 
   const handleSetFinalVote = (vote) => {
-    socket.emit('set_final_vote', { roomId: MOCK_ROOM_ID, vote });
+    socket.emit('set_final_vote', { roomId: getCurrentRoomId(), vote });
   };
 
   const handleSeatClick = (seatIndex) => {
-    socket.emit('change_seat', { roomId: MOCK_ROOM_ID, seatIndex });
+    socket.emit('change_seat', { roomId: getCurrentRoomId(), seatIndex });
   };
 
   const handleSendReaction = (reaction) => {
-    socket.emit('send_reaction', { roomId: MOCK_ROOM_ID, reaction });
+    socket.emit('send_reaction', { roomId: getCurrentRoomId(), reaction });
+  };
+
+  const handleRequestJoin = (rId) => {
+    setGuestRoomId(rId);
+    setGuestStatus('requesting');
+    socket.emit('request_join', { roomId: rId, guestName: user.name });
+  };
+
+  const approveGuest = (req) => {
+    socket.emit('approve_guest', { guestId: req.guestId, roomId: req.reqRoomId });
+    setJoinRequests(prev => prev.filter(r => r.guestId !== req.guestId));
+  };
+
+  const denyGuest = (req) => {
+    socket.emit('deny_guest', { guestId: req.guestId, roomId: req.reqRoomId });
+    setJoinRequests(prev => prev.filter(r => r.guestId !== req.guestId));
   };
 
   const summary = useMemo(() => {
     if (!roomState || roomState.status !== 'revealed') return null;
     return calculateSummary(roomState.participants);
   }, [roomState]);
+
+  if (user.role === 'guest' && guestStatus !== 'approved') {
+    return (
+      <div className="page-container poker-lobby">
+        <h2>Salas Ativas de Planning Poker</h2>
+        {guestStatus === 'requesting' ? (
+          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
+            <p>Aguardando aprovação do anfitrião...</p>
+            <div className="spinner" style={{ margin: '1rem auto' }}></div>
+          </div>
+        ) : (
+          <div className="active-rooms-list">
+            {activeRooms.length === 0 ? (
+              <p>Nenhuma sala ativa no momento.</p>
+            ) : (
+              activeRooms.map(r => (
+                <div key={r.id} className="room-card glass-panel" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3>{r.squadName}</h3>
+                    <p>{r.participantCount} participantes</p>
+                  </div>
+                  <button className="btn-primary" onClick={() => handleRequestJoin(r.id)}>Solicitar Entrada</button>
+                </div>
+              ))
+            )}
+            <button className="btn-secondary" style={{ marginTop: '1rem' }} onClick={() => socket.emit('get_active_rooms')}>Atualizar Lista</button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!roomState) return <div className="page-container">Conectando à mesa...</div>;
 
@@ -118,13 +210,13 @@ const PokerRoom = () => {
     <div className="page-container poker-room">
       <header className="page-header">
         <div>
-          <h1 className="text-gradient">Planning Poker</h1>
+          <h1 className="text-gradient">Planning Poker {activeSquad && `- ${activeSquad.name}`}</h1>
           <p>
             Status: <strong>{isRevealed ? 'Votos Revelados' : 'Votação em Andamento'}</strong>
           </p>
         </div>
         
-        {user.role === 'admin' && (
+        {user.role !== 'guest' && (
           <div className="facilitator-controls">
             {!isRevealed ? (
               <button className="btn-primary" style={{ background: 'var(--accent-secondary)' }} onClick={handleReveal}>
@@ -138,6 +230,21 @@ const PokerRoom = () => {
           </div>
         )}
       </header>
+
+      {joinRequests.length > 0 && (
+        <div className="join-requests glass-panel" style={{ padding: '1rem', marginBottom: '1rem', background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)' }}>
+          <h3 style={{ color: '#ffc107', marginTop: 0 }}>Pedidos de Entrada</h3>
+          {joinRequests.map(req => (
+            <div key={req.guestId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+              <span><strong>{req.guestName}</strong> deseja entrar na sala.</span>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="btn-primary" onClick={() => approveGuest(req)}>Aprovar</button>
+                <button className="btn-secondary" onClick={() => denyGuest(req)}>Recusar</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="poker-area">
         

@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Heart, Columns, Spade, Settings, LogOut, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { LayoutDashboard, Heart, Columns, Spade, Settings, LogOut, ChevronLeft, ChevronRight, Menu, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from './SettingsModal';
 import './Sidebar.css';
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, activeSquad, setActiveSquad } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'member'] },
-    { path: '/kudos', label: 'Mural de Kudos', icon: Heart, roles: ['admin', 'member'] },
-    { path: '/poker', label: 'Planning Poker', icon: Spade, roles: ['admin', 'member', 'guest'] },
-    { path: '/retro', label: 'Retrospectiva', icon: Columns, roles: ['admin', 'member'] },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'user'] },
+    { path: '/kudos', label: 'Mural de Kudos', icon: Heart, roles: ['admin', 'user'] },
+    { path: '/poker', label: 'Planning Poker', icon: Spade, roles: ['admin', 'user', 'guest'] },
+    { path: '/retro', label: 'Retrospectiva', icon: Columns, roles: ['admin', 'user'] },
   ];
 
-  const visibleItems = navItems.filter(item => item.roles.includes(user.role));
+  if (user?.role === 'admin') {
+    navItems.push({ path: '/admin', label: 'Admin', icon: Shield, roles: ['admin'] });
+  }
+
+  const visibleItems = navItems.filter(item => item.roles.includes(user?.role));
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
@@ -37,13 +41,33 @@ const Sidebar = () => {
         <div className="sidebar-header">
           <div className="logo-container">
             <div className="logo-icon">A</div>
-            <h2 className="hide-on-collapse">AgileFlow</h2>
+            {user?.squads && user.squads.length > 0 && !isCollapsed ? (
+              <select 
+                className="hide-on-collapse squad-header-select"
+                value={activeSquad?._id || ''} 
+                onChange={(e) => {
+                  const squadInfo = user.squads.find(s => s.squad._id === e.target.value);
+                  if (squadInfo) {
+                    setActiveSquad(squadInfo.squad);
+                    localStorage.setItem('activeSquadId', squadInfo.squad._id);
+                  }
+                }}
+              >
+                {user.squads.map(s => (
+                  <option key={s.squad._id} value={s.squad._id}>{s.squad.name}</option>
+                ))}
+              </select>
+            ) : (
+              <h2 className="hide-on-collapse">AgileFlow</h2>
+            )}
           </div>
           <button className="collapse-btn hide-on-collapse" onClick={toggleCollapse} title="Recolher menu">
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
         </div>
         
+
+
         <nav className="sidebar-nav">
           {visibleItems.map((item) => (
             <NavLink 
@@ -66,7 +90,9 @@ const Sidebar = () => {
             <img src={user.avatar} alt={user.name} className="avatar" />
             <div className="user-info hide-on-collapse">
               <span className="user-name" title={user.name}>{user.name.split(' ')[0]}</span>
-              <span className="user-role">{user.role}</span>
+              <span className="user-role">
+                {user.role === 'admin' ? 'Global Admin' : (user.squads?.find(s => s.squad._id === activeSquad?._id)?.role || 'User')}
+              </span>
             </div>
             
             <div className="footer-actions hide-on-collapse" style={{ display: 'flex', marginLeft: 'auto' }}>

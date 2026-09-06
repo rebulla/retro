@@ -4,14 +4,18 @@ const RetrospectiveBoard = require('../models/RetrospectiveBoard');
 
 exports.getActiveSprint = async (req, res) => {
   try {
-    // Busca a sprint ativa, ou a mais recente
-    let activeSprint = await Sprint.findOne({ isActive: true })
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
+    // Busca a sprint ativa da squad
+    let activeSprint = await Sprint.findOne({ isActive: true, squadId })
       .sort({ createdAt: -1 });
       
       
     if (!activeSprint) {
       // Cria a primeira sprint padrão se não houver
       activeSprint = await Sprint.create({
+        squadId,
         name: `Sprint #1`,
         startDate: new Date(),
         endDate: new Date(new Date().setDate(new Date().getDate() + 14)),
@@ -19,8 +23,9 @@ exports.getActiveSprint = async (req, res) => {
         isActive: true
       });
       // Cria os boards padrão associados
-      await KudosBoard.create({ sprintId: activeSprint._id });
+      await KudosBoard.create({ sprintId: activeSprint._id, squadId });
       await RetrospectiveBoard.create({ 
+        squadId,
         sprintId: activeSprint._id,
         columns: [
           { name: 'O que foi bom?', color: 'success' },
@@ -68,13 +73,17 @@ exports.updateSprint = async (req, res) => {
 
 exports.createSprint = async (req, res) => {
   try {
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
     const { name, startDate, endDate, theme, themeResponsible, backgroundImage } = req.body;
     
-    // Desativar todas as sprints antigas
-    await Sprint.updateMany({ isActive: true }, { $set: { isActive: false } });
+    // Desativar todas as sprints antigas da squad
+    await Sprint.updateMany({ isActive: true, squadId }, { $set: { isActive: false } });
     
     // Criar nova sprint
     const newSprint = new Sprint({
+      squadId,
       name: name || `Sprint ${new Date().toLocaleDateString()}`,
       startDate: startDate || new Date(),
       endDate: endDate || new Date(new Date().setDate(new Date().getDate() + 14)),
@@ -87,8 +96,9 @@ exports.createSprint = async (req, res) => {
     const savedSprint = await newSprint.save();
     
     // Criar boards associados automaticamente
-    await KudosBoard.create({ sprintId: savedSprint._id });
+    await KudosBoard.create({ sprintId: savedSprint._id, squadId });
     await RetrospectiveBoard.create({ 
+      squadId,
       sprintId: savedSprint._id,
       columns: [
         { name: 'O que foi bom?', color: 'success' },
@@ -106,7 +116,10 @@ exports.createSprint = async (req, res) => {
 
 exports.getAllSprints = async (req, res) => {
   try {
-    const sprints = await Sprint.find()
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
+
+    const sprints = await Sprint.find({ squadId })
       .sort({ createdAt: -1 });
     res.json(sprints);
   } catch (error) {
@@ -117,9 +130,11 @@ exports.getAllSprints = async (req, res) => {
 exports.activateSprint = async (req, res) => {
   try {
     const sprintId = req.params.id;
+    const squadId = req.headers['x-squad-id'];
+    if (!squadId) return res.status(400).json({ message: 'x-squad-id header is required' });
     
-    // Desativar todas
-    await Sprint.updateMany({}, { $set: { isActive: false } });
+    // Desativar todas da squad
+    await Sprint.updateMany({ squadId }, { $set: { isActive: false } });
     
     // Ativar a específica
     const sprint = await Sprint.findByIdAndUpdate(sprintId, { isActive: true }, { new: true });
@@ -152,10 +167,12 @@ exports.deleteSprint = async (req, res) => {
     
     await Sprint.findByIdAndDelete(sprintId);
     
+    const squadId = req.headers['x-squad-id'];
+    
     // Se a sprint que deletamos estava ativa, ativamos a mais recente que sobrou
-    const activeSprint = await Sprint.findOne({ isActive: true });
+    const activeSprint = await Sprint.findOne({ isActive: true, squadId });
     if (!activeSprint) {
-      const mostRecent = await Sprint.findOne().sort({ createdAt: -1 });
+      const mostRecent = await Sprint.findOne({ squadId }).sort({ createdAt: -1 });
       if (mostRecent) {
         mostRecent.isActive = true;
         await mostRecent.save();

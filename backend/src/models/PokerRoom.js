@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const pokerRoomSchema = new mongoose.Schema({
+  squadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Squad' },
   sprintId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sprint' },
   name: { type: String, required: true },
   facilitator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
