@@ -153,3 +153,13 @@
   font-size: 1.5rem;
   animation: floatUpAndFade 2s ease-out forwards;
 }
+
+@media (max-width: 768px) {
+  .ticker-label {
+    padding: 0 8px;
+    font-size: 0.7rem;
+  }
+  .ticker-reactions-actions {
+    padding: 0 8px;
+  }
+}

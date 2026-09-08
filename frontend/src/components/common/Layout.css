@@ -26,4 +26,8 @@
     padding: 16px;
     padding-top: 64px; /* Space for the mobile toggle button */
   }
+  
+  .content-wrapper {
+    padding: 16px;
+  }
 }
