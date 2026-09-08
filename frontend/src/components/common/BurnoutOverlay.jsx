@@ -15,8 +15,8 @@ const BurnoutOverlay = () => {
       // Generate 15 random flames
       const newFlames = Array.from({ length: 15 }).map((_, i) => ({
         id: i,
-        top: Math.random() * 80 + 10, // 10% to 90%
-        left: Math.random() * 80 + 10,
+        top: Math.random() * 70 + 15, // 15% to 85%
+        left: Math.random() * 70 + 15,
         scale: Math.random() * 0.5 + 0.8
       }));
       setFlames(newFlames);
@@ -79,6 +79,10 @@ const BurnoutOverlay = () => {
                 transform: `scale(${flame.scale})`
               }}
               onMouseEnter={() => extinguishFlame(flame.id)}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                extinguishFlame(flame.id);
+              }}
             >
               🔥
             </div>

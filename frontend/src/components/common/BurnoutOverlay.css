@@ -37,6 +37,8 @@
   user-select: none;
   animation: flicker 0.5s infinite alternate ease-in-out, floatUp 2s infinite ease-in-out alternate;
   filter: drop-shadow(0 0 20px rgba(255, 100, 0, 0.8));
+  padding: 30px;
+  margin: -30px;
 }
 
 @keyframes flicker {

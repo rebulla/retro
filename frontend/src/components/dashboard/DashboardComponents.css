@@ -162,4 +162,11 @@
   .ticker-reactions-actions {
     padding: 0 8px;
   }
+  .kudos-carousel {
+    padding: 12px;
+  }
+  .kudos-slide-message {
+    font-size: 1rem;
+    margin: 8px 0;
+  }
 }

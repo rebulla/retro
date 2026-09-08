@@ -279,4 +279,8 @@
   .collapse-btn {
     display: none;
   }
+  
+  .sidebar-header {
+    padding-top: 72px; /* Push logo below the hamburger menu */
+  }
 }

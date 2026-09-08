@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Heart, Columns, Spade, Settings, LogOut, ChevronLeft, ChevronRight, Menu, Shield } from 'lucide-react';
+import { LayoutDashboard, Heart, Columns, Spade, Settings, LogOut, ChevronLeft, ChevronRight, Menu, Shield, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from './SettingsModal';
 import CustomSelect from './CustomSelect';
@@ -53,8 +53,8 @@ const Sidebar = () => {
   return (
     <>
       {/* Mobile Toggle Button */}
-      <button className="mobile-toggle" onClick={toggleMobile}>
-        <Menu size={24} />
+      <button className="mobile-toggle" onClick={toggleMobile} style={{ zIndex: 110 }}>
+        {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* Mobile Overlay */}
