@@ -39,6 +39,11 @@ const RetroRadio = ({ retroId }) => {
   const [playerReady, setPlayerReady] = useState(false);
   const [isPlayingLocally, setIsPlayingLocally] = useState(false);
   const playerRef = useRef(null);
+  const radioStateRef = useRef(radioState);
+  
+  useEffect(() => {
+    radioStateRef.current = radioState;
+  }, [radioState]);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'scrum_master';
 
@@ -81,13 +86,15 @@ const RetroRadio = ({ retroId }) => {
     playerRef.current = event.target;
     setPlayerReady(true);
     
-    // If state already implies playing, seek and play
-    if (radioState.isPlaying) {
-      const elapsed = (Date.now() - radioState.timeAtUpdate) / 1000;
-      event.target.seekTo(radioState.timestamp + elapsed, true);
+    // Use the ref to ensure we have the absolute latest state when the player becomes ready
+    const currentRadioState = radioStateRef.current;
+    
+    if (currentRadioState.isPlaying) {
+      const elapsed = (Date.now() - currentRadioState.timeAtUpdate) / 1000;
+      event.target.seekTo(currentRadioState.timestamp + elapsed, true);
       event.target.playVideo();
     } else {
-      event.target.seekTo(radioState.timestamp, true);
+      event.target.seekTo(currentRadioState.timestamp, true);
     }
   };
 
@@ -208,18 +215,22 @@ const RetroRadio = ({ retroId }) => {
             </div>
           )}
           
-          {radioState.url && (
+          {radioState.url && radioState.isPlaying && !isPlayingLocally && (
+            <div style={{ textAlign: 'center', marginTop: '8px' }}>
+              <button 
+                className="btn-primary" 
+                style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px', animation: 'pulse 2s infinite' }}
+                onClick={handleManualSync}
+              >
+                🎵 Ligar Som (Sincronizar)
+              </button>
+            </div>
+          )}
+          
+          {radioState.url && !isAdmin && (
             <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px' }}>
               {radioState.isPlaying ? (
-                isPlayingLocally ? 'Música tocando...' : (
-                  <button 
-                    className="btn-primary" 
-                    style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px' }}
-                    onClick={handleManualSync}
-                  >
-                    🎵 Ligar Som
-                  </button>
-                )
+                isPlayingLocally ? 'Música tocando...' : ''
               ) : 'Rádio pausada'}
             </div>
           )}
