@@ -4,6 +4,7 @@ import { DndContext, closestCorners, KeyboardSensor, PointerSensor, useSensor, u
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import RetroColumn from '../components/retro/RetroColumn';
 import RetroSettingsModal from '../components/retro/RetroSettingsModal';
+import RetroRadio from '../components/retro/RetroRadio';
 import CustomSelect from '../components/common/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
@@ -262,6 +263,7 @@ const RetroBoard = () => {
   if (currentRetro.status === 'waiting') {
     return (
       <div className="retro-board-container">
+        <RetroRadio retroId={currentRetro._id} />
         {currentRetro.backgroundImage && (
           <div 
             className="retro-bg" 
@@ -295,6 +297,7 @@ const RetroBoard = () => {
 
   return (
     <div className="retro-board-container">
+      <RetroRadio retroId={currentRetro._id} />
       {currentRetro.backgroundImage && (
         <div 
           className="retro-bg" 

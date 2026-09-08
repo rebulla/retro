@@ -173,8 +173,18 @@ const initSocket = (server) => {
     });
 
     // 6. Retrospective Board Events
+    const retroRadios = {}; // In-memory radio state { retroId: { videoUrl, isPlaying, timestamp, timeAtUpdate } }
+
     socket.on('join_retro', (retroId) => {
       socket.join(`retro_${retroId}`);
+      if (retroRadios[retroId]) {
+        socket.emit('radio_state', retroRadios[retroId]);
+      }
+    });
+
+    socket.on('radio_update', ({ retroId, state }) => {
+      retroRadios[retroId] = state;
+      socket.to(`retro_${retroId}`).emit('radio_state', state);
     });
 
     socket.on('leave_retro', (retroId) => {
