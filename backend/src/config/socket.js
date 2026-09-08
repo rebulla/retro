@@ -182,6 +182,12 @@ const initSocket = (server) => {
       }
     });
 
+    socket.on('get_radio_state', (retroId) => {
+      if (retroRadios[retroId]) {
+        socket.emit('radio_state', retroRadios[retroId]);
+      }
+    });
+
     socket.on('radio_update', ({ retroId, state }) => {
       retroRadios[retroId] = state;
       socket.to(`retro_${retroId}`).emit('radio_state', state);

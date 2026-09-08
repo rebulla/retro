@@ -76,6 +76,9 @@ const RetroRadio = ({ retroId }) => {
     };
 
     socket.on('radio_state', handleRadioState);
+    
+    // Explicitly request current state in case we missed the join_retro response
+    socket.emit('get_radio_state', retroId);
 
     return () => {
       socket.off('radio_state', handleRadioState);
