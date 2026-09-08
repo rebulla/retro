@@ -37,6 +37,7 @@ const RetroRadio = ({ retroId }) => {
   const [localUrl, setLocalUrl] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
+  const [isPlayingLocally, setIsPlayingLocally] = useState(false);
   const playerRef = useRef(null);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'scrum_master';
@@ -87,6 +88,18 @@ const RetroRadio = ({ retroId }) => {
       event.target.playVideo();
     } else {
       event.target.seekTo(radioState.timestamp, true);
+    }
+  };
+
+  const handleManualSync = () => {
+    if (!playerRef.current) return;
+    const player = playerRef.current;
+    try {
+      const elapsed = (Date.now() - radioState.timeAtUpdate) / 1000;
+      player.seekTo(radioState.timestamp + elapsed, true);
+      player.playVideo();
+    } catch (e) {
+      console.warn('Manual sync failed', e);
     }
   };
 
@@ -195,9 +208,19 @@ const RetroRadio = ({ retroId }) => {
             </div>
           )}
           
-          {radioState.url && !isAdmin && (
+          {radioState.url && (
             <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px' }}>
-              {radioState.isPlaying ? 'Música tocando...' : 'Rádio pausada'}
+              {radioState.isPlaying ? (
+                isPlayingLocally ? 'Música tocando...' : (
+                  <button 
+                    className="btn-primary" 
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '20px' }}
+                    onClick={handleManualSync}
+                  >
+                    🎵 Ligar Som
+                  </button>
+                )
+              ) : 'Rádio pausada'}
             </div>
           )}
         </div>
@@ -211,6 +234,11 @@ const RetroRadio = ({ retroId }) => {
             opts={opts}
             onReady={handleReady}
             onStateChange={(e) => {
+              if (e.data === YouTube.PlayerState.PLAYING) {
+                setIsPlayingLocally(true);
+              } else if (e.data === YouTube.PlayerState.PAUSED || e.data === YouTube.PlayerState.ENDED) {
+                setIsPlayingLocally(false);
+              }
               // Automatically sync pausing if it happens outside React controls
               if (isAdmin && e.data === YouTube.PlayerState.PAUSED && radioState.isPlaying) {
                  handleUpdateRadio(false);
