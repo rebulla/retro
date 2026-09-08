@@ -99,6 +99,9 @@ const PokerRoom = () => {
   const [activeRooms, setActiveRooms] = useState([]);
   const [guestRoomId, setGuestRoomId] = useState(null);
   const [guestStatus, setGuestStatus] = useState('lobby'); // lobby, requesting, approved, denied
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [isGuestHost, setIsGuestHost] = useState(false);
   
   // Host state
   const [joinRequests, setJoinRequests] = useState([]);
@@ -137,8 +140,8 @@ const PokerRoom = () => {
     });
 
     socket.on('guest_join_request', ({ guestId, guestName, roomId: reqRoomId }) => {
-      // Only host/admin of the room sees this
-      if (user.role !== 'guest' && reqRoomId === roomId) {
+      // Host or guest creator sees this
+      if ((user.role !== 'guest' || isGuestHost) && reqRoomId === (user.role === 'guest' ? guestRoomId : roomId)) {
         setJoinRequests(prev => [...prev, { guestId, guestName, reqRoomId }]);
       }
     });
@@ -165,7 +168,7 @@ const PokerRoom = () => {
       socket.off('guest_join_request');
       socket.off('reaction_received');
     };
-  }, [socket, user, roomId, activeSquad]);
+  }, [socket, user, roomId, activeSquad, isGuestHost, guestRoomId]);
 
   const getCurrentRoomId = () => {
     return user.role === 'guest' ? guestRoomId : roomId;
@@ -228,6 +231,17 @@ const PokerRoom = () => {
     socket.emit('request_join', { roomId: rId, guestName: user.name });
   };
 
+  const handleCreateGuestRoom = (e) => {
+    e.preventDefault();
+    if (!newRoomName.trim()) return;
+    const newRoomId = 'poker_guest_' + Date.now();
+    setIsGuestHost(true);
+    setGuestStatus('approved');
+    setGuestRoomId(newRoomId);
+    setShowCreateModal(false);
+    socket.emit('join_room', { roomId: newRoomId, user: { ...user, squadName: newRoomName } });
+  };
+
   const approveGuest = (req) => {
     socket.emit('approve_guest', { guestId: req.guestId, roomId: req.reqRoomId });
     setJoinRequests(prev => prev.filter(r => r.guestId !== req.guestId));
@@ -243,10 +257,15 @@ const PokerRoom = () => {
     return calculateSummary(roomState.participants);
   }, [roomState]);
 
+  const isHost = user.role !== 'guest' || isGuestHost;
+
   if (user.role === 'guest' && guestStatus !== 'approved') {
     return (
       <div className="page-container poker-lobby">
-        <h2>Salas Ativas de Planning Poker</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2>Salas Ativas de Planning Poker</h2>
+          <button className="btn-primary" onClick={() => setShowCreateModal(true)}>+ Criar Sala Avulsa</button>
+        </div>
         {guestStatus === 'requesting' ? (
           <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
             <p>Aguardando aprovação do anfitrião...</p>
@@ -270,11 +289,40 @@ const PokerRoom = () => {
             <button className="btn-secondary" style={{ marginTop: '1rem' }} onClick={() => socket.emit('get_active_rooms')}>Atualizar Lista</button>
           </div>
         )}
+
+        {showCreateModal && (
+          <div className="modal-overlay">
+            <div className="settings-modal glass-panel">
+              <div className="modal-header">
+                <h3>Criar Sala Avulsa</h3>
+                <button className="close-btn" onClick={() => setShowCreateModal(false)}>✕</button>
+              </div>
+              <form onSubmit={handleCreateGuestRoom}>
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Nome da Sala / Squad</label>
+                    <input 
+                      type="text" 
+                      value={newRoomName} 
+                      onChange={e => setNewRoomName(e.target.value)} 
+                      placeholder="Ex: Refinamento App" 
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>Cancelar</button>
+                  <button type="submit" className="btn-primary">Criar Sala</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (!roomState) return <div className="page-container">Conectando à mesa...</div>;
+  if (!roomState) return <div className="page-container"><p>Carregando sala de poker...</p></div>;
 
   const participants = Object.values(roomState.participants);
   const isRevealed = roomState.status === 'revealed';
@@ -290,8 +338,8 @@ const PokerRoom = () => {
           </p>
         </div>
         
-        {user.role !== 'guest' && (
-          <div className="facilitator-controls">
+        {isHost && (
+          <div className="host-controls">
             {!isRevealed ? (
               <button className="btn-primary" style={{ background: 'var(--accent-secondary)' }} onClick={handleReveal}>
                 Revelar Votos
@@ -334,7 +382,7 @@ const PokerRoom = () => {
               ) : hasDivergence ? (
                 <div className="divergence-alert">
                   <span className="divergence-text">Divergência detectada!</span>
-                  {user.role === 'admin' ? (
+                  {isHost ? (
                      <div className="facilitator-decision">
                        <span>Facilitador, defina o acordo:</span>
                        <div className="decision-buttons">
