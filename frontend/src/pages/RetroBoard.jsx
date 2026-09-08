@@ -4,6 +4,7 @@ import { DndContext, closestCorners, KeyboardSensor, PointerSensor, useSensor, u
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import RetroColumn from '../components/retro/RetroColumn';
 import RetroSettingsModal from '../components/retro/RetroSettingsModal';
+import CustomSelect from '../components/common/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import * as retroService from '../services/retroService';
@@ -342,12 +343,16 @@ const RetroBoard = () => {
           </div>
 
           <div className="retro-actions">
-            <select className="select-retro" value={currentRetro._id} onChange={handleRetroSelect}>
-              {retros.map(r => (
-                <option key={r._id} value={r._id}>{r.title}</option>
-              ))}
-              <option value="new">+ Criar Nova</option>
-            </select>
+            <CustomSelect 
+              style={{ minWidth: '180px' }}
+              value={currentRetro._id} 
+              onChange={handleRetroSelect}
+              options={[
+                ...retros.map(r => ({ value: r._id, label: r.title })),
+                { value: 'new', label: '+ Criar Nova' }
+              ]}
+              placeholder="Selecione..."
+            />
             
             {user?.role !== 'guest' && (
               <>

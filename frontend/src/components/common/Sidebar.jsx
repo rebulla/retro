@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Heart, Columns, Spade, Settings, LogOut, ChevronLeft, ChevronRight, Menu, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import SettingsModal from './SettingsModal';
+import CustomSelect from './CustomSelect';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const { user, logout, activeSquad, setActiveSquad } = useAuth();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -27,6 +29,27 @@ const Sidebar = () => {
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
 
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [lastLogoClick, setLastLogoClick] = useState(0);
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - lastLogoClick < 800) {
+      setLogoClickCount(prev => {
+        const next = prev + 1;
+        if (next >= 9) {
+          window.dispatchEvent(new Event('trigger-burnout'));
+          return 0;
+        }
+        return next;
+      });
+    } else {
+      setLogoClickCount(1);
+    }
+    setLastLogoClick(now);
+    navigate('/dashboard');
+  };
+
   return (
     <>
       {/* Mobile Toggle Button */}
@@ -40,10 +63,16 @@ const Sidebar = () => {
       <aside className={`sidebar glass-panel ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
-            <div className="logo-icon">A</div>
-            {user?.squads && user.squads.length > 0 && !isCollapsed ? (
-              <select 
-                className="hide-on-collapse squad-header-select"
+            <div 
+              className="logo-icon" 
+              onClick={handleLogoClick}
+              style={{ cursor: 'pointer' }}
+              title="Ir para Dashboard"
+            >A</div>
+            {user?.squads && user.squads.length > 1 && !isCollapsed ? (
+              <CustomSelect 
+                className="hide-on-collapse"
+                style={{ maxWidth: '150px' }}
                 value={activeSquad?._id || ''} 
                 onChange={(e) => {
                   const squadInfo = user.squads.find(s => s.squad._id === e.target.value);
@@ -52,13 +81,16 @@ const Sidebar = () => {
                     localStorage.setItem('activeSquadId', squadInfo.squad._id);
                   }
                 }}
-              >
-                {user.squads.map(s => (
-                  <option key={s.squad._id} value={s.squad._id}>{s.squad.name}</option>
-                ))}
-              </select>
+                options={user.squads.map(s => ({ value: s.squad._id, label: s.squad.name }))}
+                placeholder="Selecione..."
+              />
             ) : (
-              <h2 className="hide-on-collapse">AgileFlow</h2>
+              <h2 
+                className="hide-on-collapse"
+                onClick={() => navigate('/dashboard')}
+                style={{ cursor: 'pointer' }}
+                title="Ir para Dashboard"
+              >AgileFlow</h2>
             )}
           </div>
           <button className="collapse-btn hide-on-collapse" onClick={toggleCollapse} title="Recolher menu">
@@ -74,6 +106,7 @@ const Sidebar = () => {
               key={item.path} 
               to={item.path} 
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              title={item.label}
               onClick={() => {
                 setIsMobileOpen(false);
                 if (item.path === '/retro') setIsCollapsed(true);

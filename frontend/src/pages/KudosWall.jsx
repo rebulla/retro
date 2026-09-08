@@ -5,6 +5,7 @@ import KudosSettingsModal from '../components/kudos/KudosSettingsModal';
 import KudosAddModal from '../components/kudos/KudosAddModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
+import CustomSelect from '../components/common/CustomSelect';
 import * as kudosService from '../services/kudosService';
 import './KudosWall.css';
 
@@ -230,12 +231,16 @@ const KudosWall = () => {
           </div>
 
           <div className="kudos-actions">
-            <select className="select-kudos" value={currentBoard._id} onChange={handleBoardSelect}>
-              {boards.map(b => (
-                <option key={b._id} value={b._id}>{b.title}</option>
-              ))}
-              <option value="new">+ Criar Novo</option>
-            </select>
+            <CustomSelect 
+              style={{ minWidth: '180px' }}
+              value={currentBoard._id} 
+              onChange={handleBoardSelect}
+              options={[
+                ...boards.map(b => ({ value: b._id, label: b.title })),
+                { value: 'new', label: '+ Criar Novo Mural' }
+              ]}
+              placeholder="Selecione um mural..."
+            />
             
             {user?.role !== 'guest' && (
               <>
@@ -260,12 +265,14 @@ const KudosWall = () => {
           {currentBoard.introduction && (
             <div className="kudos-intro glass-panel">
               <p>{currentBoard.introduction}</p>
-              {user?.role !== 'guest' && (
-                <button className="btn-primary" onClick={() => setIsAddOpen(true)}>
-                  <PlusCircle size={18} /> Enviar Kudo
-                </button>
-              )}
             </div>
+          )}
+
+          {user?.role !== 'guest' && (
+            <button className="kudo-fab" onClick={() => setIsAddOpen(true)} title="Enviar Kudo">
+              <PlusCircle size={24} />
+              <span>Enviar Kudo</span>
+            </button>
           )}
 
           <div className="kudos-grid">

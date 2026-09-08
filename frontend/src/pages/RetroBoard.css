@@ -42,6 +42,8 @@
   padding: 16px 24px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
+  position: relative;
+  z-index: 100;
 }
 
 .retro-title-section {

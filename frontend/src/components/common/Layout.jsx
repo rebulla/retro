@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import BurnoutOverlay from './BurnoutOverlay';
 import './Layout.css';
 
 const Layout = () => {
@@ -12,6 +13,7 @@ const Layout = () => {
           <Outlet />
         </div>
       </main>
+      <BurnoutOverlay />
     </div>
   );
 };

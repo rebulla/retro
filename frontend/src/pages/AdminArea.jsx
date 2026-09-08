@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Check, X, Users, Briefcase } from 'lucide-react';
+import { Shield, Check, X, Users, Briefcase, Trash2, PlusCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import CustomSelect from '../components/common/CustomSelect';
 import './AdminArea.css';
+
+const ROLE_LABELS = {
+  dev: 'Dev',
+  po: 'PO',
+  qa: 'QA',
+  scrum_master: 'SM',
+  admin: 'Admin'
+};
+
+const formatRole = (role) => ROLE_LABELS[role] || role;
 
 const AdminArea = () => {
   const auth = useAuth();
@@ -10,6 +21,10 @@ const AdminArea = () => {
   const [squads, setSquads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [userToAssign, setUserToAssign] = useState(null);
+  const [assignSquadId, setAssignSquadId] = useState('');
+  const [assignRole, setAssignRole] = useState('dev');
   const [newSquadName, setNewSquadName] = useState('');
   const [editingSquad, setEditingSquad] = useState(null);
   const [editSquadName, setEditSquadName] = useState('');
@@ -106,6 +121,13 @@ const AdminArea = () => {
     }
   };
 
+  const openAssignModal = (u) => {
+    setUserToAssign(u);
+    setAssignSquadId('');
+    setAssignRole('dev');
+    setIsAssignModalOpen(true);
+  };
+
   const updateSquadName = async (squadId) => {
     if (!editSquadName.trim()) return;
     try {
@@ -117,11 +139,41 @@ const AdminArea = () => {
       if (res.ok) {
         setEditingSquad(null);
         fetchData();
-        // optionally refresh user if they are in that squad and it changed name,
-        // but not strictly necessary for simple name changes as we can rely on next reload
       }
     } catch (error) {
       console.error("Erro ao atualizar squad:", error);
+    }
+  };
+
+  const deleteSquad = async (squadId) => {
+    if (!window.confirm("Deseja realmente remover esta Squad?")) return;
+    try {
+      const res = await fetch(`${API_URL}/squads/${squadId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.message || 'Erro ao deletar squad');
+      }
+    } catch (error) {
+      console.error("Erro ao remover squad:", error);
+      alert('Erro ao remover squad');
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm("Deseja realmente excluir este usuário permanentemente?")) return;
+    try {
+      const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
     }
   };
 
@@ -155,98 +207,74 @@ const AdminArea = () => {
           <div className="admin-section">
             <h2>Gestão de Acessos</h2>
             <div className="users-list">
-              {users.map(u => (
-                <div key={u._id} className="user-card glass-panel">
-                  <div className="user-info">
-                    <img src={u.avatar} alt={u.name} />
-                    <div>
-                      <h3>{u.name}</h3>
-                      <p>{u.email}</p>
-                      <span className={`status-badge ${u.status}`}>{u.status}</span>
-                    </div>
-                  </div>
-                  
-                  {u.status === 'pending' && (
-                    <div className="user-actions">
-                      <select id={`squad-${u._id}`} className="admin-select">
-                        <option value="">Selecione a Squad...</option>
-                        {squads.map(s => (
-                          <option key={s._id} value={s._id}>{s.name}</option>
-                        ))}
-                      </select>
-                      <select id={`role-${u._id}`} className="admin-select">
-                        <option value="dev">Dev</option>
-                        <option value="po">PO</option>
-                        <option value="qa">QA</option>
-                        <option value="scrum_master">Scrum Master</option>
-                        <option value="admin">Squad Admin</option>
-                      </select>
-                      <button 
-                        className="btn-success"
-                        onClick={() => {
-                          const squadId = document.getElementById(`squad-${u._id}`).value;
-                          const role = document.getElementById(`role-${u._id}`).value;
-                          if (squadId) approveUser(u._id, squadId, role);
-                          else alert('Selecione uma Squad!');
-                        }}
-                      >
-                        <Check size={18} /> Aprovar
-                      </button>
-                      <button className="btn-danger" onClick={() => rejectUser(u._id)}>
-                        <X size={18} /> Rejeitar
-                      </button>
-                    </div>
-                  )}
-
-                  {u.status === 'approved' && (
-                    <div className="user-approved-info">
-                      <p>Global Role: <strong>{u.globalRole}</strong></p>
-                      <div style={{ marginBottom: '8px' }}>
-                        {u.squads.map((sq, idx) => (
-                          <span key={idx} className="squad-tag" style={{ marginRight: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            {sq.squad?.name} ({sq.role})
-                            <button 
-                              onClick={() => removeSquad(u._id, sq.squad._id)}
-                              style={{ background: 'transparent', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', padding: 0, display: 'flex' }}
-                              title="Remover"
-                            >
-                              <X size={14} />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      
-                      {/* Allow adding to another squad */}
-                      <div className="user-actions" style={{ marginTop: '12px' }}>
-                        <select id={`squad-add-${u._id}`} className="admin-select">
-                          <option value="">Atribuir a outra Squad...</option>
-                          {squads.map(s => (
-                            <option key={s._id} value={s._id}>{s.name}</option>
-                          ))}
-                        </select>
-                        <select id={`role-add-${u._id}`} className="admin-select">
-                          <option value="dev">Dev</option>
-                          <option value="po">PO</option>
-                          <option value="qa">QA</option>
-                          <option value="scrum_master">Scrum Master</option>
-                          <option value="admin">Squad Admin</option>
-                        </select>
-                        <button 
-                          className="btn-success"
-                          onClick={() => {
-                            const squadId = document.getElementById(`squad-add-${u._id}`).value;
-                            const role = document.getElementById(`role-add-${u._id}`).value;
-                            if (squadId) approveUser(u._id, squadId, role);
-                            else alert('Selecione uma Squad!');
-                          }}
-                        >
-                          <Check size={18} /> Atribuir
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Usuário</th>
+                    <th>Status</th>
+                    <th>Squads & Role</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u._id}>
+                      <td>
+                        <div className="user-info-cell">
+                          <img src={u.avatar} alt={u.name} />
+                          <div>
+                            <h3>{u.name}</h3>
+                            <p>{u.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${u.status}`}>{u.status}</span>
+                      </td>
+                      <td>
+                        {u.status === 'approved' ? (
+                          <>
+                            <div style={{ marginBottom: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {u.squads.map((sq, idx) => (
+                                <span key={idx} className="squad-tag">
+                                  {sq.squad?.name} ({formatRole(sq.role)})
+                                  <button onClick={() => removeSquad(u._id, sq.squad._id)} title="Remover"><X size={14} /></button>
+                                </span>
+                              ))}
+                            </div>
+                          </>
+                        ) : u.status === 'pending' ? (
+                          <span style={{ color: 'var(--text-secondary)' }}>Aguardando atribuição</span>
+                        ) : (
+                          <span style={{ color: 'var(--text-secondary)' }}>-</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="user-actions">
+                          {u.status === 'pending' && (
+                            <>
+                              <button className="btn-success" onClick={() => openAssignModal(u)}><Check size={16}/> Aprovar</button>
+                              <button className="btn-danger" onClick={() => rejectUser(u._id)}><X size={16}/> Rejeitar</button>
+                            </>
+                          )}
+                          {u.status === 'approved' && (
+                            <>
+                              <button className="btn-primary" onClick={() => openAssignModal(u)}><PlusCircle size={16}/> Squad</button>
+                              <button className="btn-danger" onClick={() => rejectUser(u._id)}><X size={16}/> Restringir</button>
+                              <button className="btn-secondary" onClick={() => deleteUser(u._id)} style={{ color: 'var(--accent-danger)' }}><Trash2 size={16}/> Excluir</button>
+                            </>
+                          )}
+                          {u.status === 'rejected' && (
+                            <>
+                              <button className="btn-danger" onClick={() => deleteUser(u._id)}><Trash2 size={16}/> Excluir</button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -267,7 +295,7 @@ const AdminArea = () => {
 
             <div className="squads-list">
               {squads.map(s => (
-                <div key={s._id} className="squad-card glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={s._id} className="squad-card glass-panel">
                   {editingSquad === s._id ? (
                     <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
                       <input 
@@ -281,18 +309,26 @@ const AdminArea = () => {
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {s.name}
-                        </h3>
-                        <p>Criado em: {new Date(s.createdAt).toLocaleDateString()}</p>
+                      <div className="squad-card-header">
+                        <div>
+                          <h3>
+                            {s.name}
+                            <span className="user-count-pill" title={`${s.userCount || 0} pessoa(s) vinculada(s)`}>{s.userCount || 0}</span>
+                          </h3>
+                          <p>Criado em: {new Date(s.createdAt).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <button className="btn-secondary" onClick={() => {
-                        setEditingSquad(s._id);
-                        setEditSquadName(s.name);
-                      }}>
-                        Editar Nome
-                      </button>
+                      <div className="squad-card-actions">
+                        <button className="btn-secondary" onClick={() => {
+                          setEditingSquad(s._id);
+                          setEditSquadName(s.name);
+                        }}>
+                          Editar Nome
+                        </button>
+                        <button className="btn-danger" onClick={() => deleteSquad(s._id)}>
+                          <Trash2 size={16} /> Excluir
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
@@ -301,6 +337,55 @@ const AdminArea = () => {
           </div>
         )}
       </div>
+      {isAssignModalOpen && userToAssign && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-panel" style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h2>Atribuir Squad & Role</h2>
+              <button className="btn-icon" onClick={() => setIsAssignModalOpen(false)}><X size={20}/></button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p>Adicionar squad para <strong>{userToAssign.name}</strong>:</p>
+              
+              <div className="form-group">
+                <label>Squad</label>
+                <CustomSelect 
+                  value={assignSquadId} 
+                  onChange={(e) => setAssignSquadId(e.target.value)}
+                  options={squads.map(s => ({ value: s._id, label: s.name }))}
+                  placeholder="Selecione uma Squad..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Role</label>
+                <CustomSelect 
+                  value={assignRole} 
+                  onChange={(e) => setAssignRole(e.target.value)}
+                  options={[
+                    { value: 'dev', label: 'Dev' },
+                    { value: 'po', label: 'PO' },
+                    { value: 'qa', label: 'QA' },
+                    { value: 'scrum_master', label: 'SM' },
+                    { value: 'admin', label: 'Admin' }
+                  ]}
+                  placeholder="Selecione a Role..."
+                />
+              </div>
+            </div>
+            <div className="modal-footer" style={{ marginTop: '24px' }}>
+              <button className="btn-secondary" onClick={() => setIsAssignModalOpen(false)}>Cancelar</button>
+              <button className="btn-primary" onClick={() => {
+                if (!assignSquadId) return alert('Selecione uma Squad!');
+                approveUser(userToAssign._id, assignSquadId, assignRole);
+                setIsAssignModalOpen(false);
+              }}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

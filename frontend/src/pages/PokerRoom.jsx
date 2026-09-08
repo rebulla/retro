@@ -37,6 +37,54 @@ const calculateSummary = (participants) => {
   };
 };
 
+const playReactionSound = (reactionType) => {
+  try {
+    let audioSrc = '';
+    
+    switch (reactionType) {
+      case '🎉':
+        audioSrc = '/sounds/confetti.mp3';
+        break;
+      case '🔥':
+        audioSrc = '/sounds/fire.mp3';
+        break;
+      case '❤️':
+        audioSrc = '/sounds/heart.mp3';
+        break;
+      case '👍':
+        audioSrc = '/sounds/thumbsup.mp3';
+        break;
+      case '☕':
+        audioSrc = '/sounds/coffee.mp3';
+        break;
+      case '😡':
+        audioSrc = '/sounds/complain.mp3';
+        break;
+      case '😭':
+        audioSrc = '/sounds/cry.mp3';
+        break;
+      case '🤔':
+        audioSrc = '/sounds/think.mp3';
+        break;
+      case '🤷':
+        audioSrc = '/sounds/shrug.mp3';
+        break;
+      case '😅':
+        audioSrc = '/sounds/sweat.mp3';
+        break;
+      default:
+        audioSrc = '/sounds/generic.mp3';
+        break;
+    }
+
+    const audio = new Audio(audioSrc);
+    audio.volume = 0.5; // Ajuste o volume se necessário
+    audio.play().catch(e => console.log('Audio autoplay blocked', e));
+  } catch (e) {
+    console.log('Error playing audio', e);
+  }
+};
+
 const PokerRoom = () => {
   const socket = useSocket();
   const { user, activeSquad } = useAuth();
@@ -97,6 +145,7 @@ const PokerRoom = () => {
 
     socket.on('reaction_received', ({ socketId, reaction }) => {
       const id = Date.now() + Math.random();
+      playReactionSound(reaction);
       setActiveReactions(prev => [...prev, { id, socketId, reaction }]);
       setTimeout(() => {
         setActiveReactions(prev => prev.filter(r => r.id !== id));
@@ -122,8 +171,33 @@ const PokerRoom = () => {
     return user.role === 'guest' ? guestRoomId : roomId;
   };
 
+  const [coffeeClickCount, setCoffeeClickCount] = useState(0);
+  const [lastCoffeeClick, setLastCoffeeClick] = useState(0);
+
   const handleVote = (vote) => {
     if (roomState?.status !== 'voting') return;
+    
+    // Coffee Easter Egg Logic
+    if (vote === '☕') {
+      const now = Date.now();
+      if (now - lastCoffeeClick < 800) {
+        const newCount = coffeeClickCount + 1;
+        setCoffeeClickCount(newCount);
+        if (newCount === 5) {
+          // Trigger Easter Egg
+          document.body.classList.add('caffeine-shake');
+          setTimeout(() => document.body.classList.remove('caffeine-shake'), 3000);
+          socket.emit('send_reaction', { roomId: getCurrentRoomId(), reaction: '☕' });
+          setCoffeeClickCount(0); // reset
+        }
+      } else {
+        setCoffeeClickCount(1);
+      }
+      setLastCoffeeClick(now);
+    } else {
+      setCoffeeClickCount(0);
+    }
+
     setMyVote(vote);
     socket.emit('vote', { roomId: getCurrentRoomId(), voteValue: vote });
   };

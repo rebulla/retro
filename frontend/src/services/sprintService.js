@@ -6,7 +6,7 @@ export const getActiveSprint = async () => {
 };
 
 export const updateSprint = async (id, data) => {
-  const response = await api.put(`/${id}`, data);
+  const response = await api.put(`/sprints/${id}`, data);
   return response.data;
 };
 

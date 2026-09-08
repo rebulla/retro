@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (user.role !== 'guest' && user.status === 'pending' && location.pathname !== '/pending') {
+  if (user.role !== 'guest' && (user.status === 'pending' || user.status === 'rejected') && location.pathname !== '/pending') {
     // If user is a global admin, they can bypass the pending screen ONLY to access /admin
     if (user.role === 'admin' && location.pathname === '/admin') {
       // allow

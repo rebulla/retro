@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import CustomSelect from '../common/CustomSelect';
 import './KudoCard.css';
 
 const BADGE_EMOJIS = {
@@ -108,16 +109,12 @@ const KudoCard = ({ kudo, onVote, onUpdate, onDelete, readOnly = false }) => {
       <div className="kudo-body">
         {isEditing ? (
           <div className="kudo-edit-container">
-            <select 
-              className="kudo-edit-input"
+            <CustomSelect 
               value={editBadge}
               onChange={(e) => setEditBadge(e.target.value)}
-            >
-              <option value="">Nenhum badge</option>
-              {Object.keys(BADGE_EMOJIS).map(b => (
-                <option key={b} value={b}>{BADGE_EMOJIS[b]} {b}</option>
-              ))}
-            </select>
+              options={Object.keys(BADGE_EMOJIS).map(b => ({ value: b, label: `${BADGE_EMOJIS[b]} ${b}` }))}
+              placeholder="Nenhum badge"
+            />
             <textarea
               ref={textareaRef}
               className="kudo-edit-input"

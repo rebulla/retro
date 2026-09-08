@@ -47,3 +47,21 @@ exports.syncUser = async (req, res) => {
     res.status(500).json({ message: 'Erro ao sincronizar usuário', error });
   }
 };
+
+exports.requestAccess = async (req, res) => {
+  try {
+    const { firebaseUid } = req.body;
+    if (!firebaseUid) return res.status(400).json({ message: 'firebaseUid é obrigatório' });
+    
+    const user = await User.findOne({ firebaseUid }).populate('squads.squad', 'name');
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+    
+    user.status = 'pending';
+    await user.save();
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Erro ao solicitar acesso:', error);
+    res.status(500).json({ message: 'Erro ao solicitar acesso', error });
+  }
+};

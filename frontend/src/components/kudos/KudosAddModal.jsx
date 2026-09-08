@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Send } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import * as kudosService from '../../services/kudosService';
+import CustomSelect from '../common/CustomSelect';
 
 const KudosAddModal = ({ isOpen, onClose, boardId }) => {
   const { user } = useAuth();
@@ -84,12 +85,12 @@ const KudosAddModal = ({ isOpen, onClose, boardId }) => {
 
           <div className="form-group" style={{ marginTop: '16px' }}>
             <label>Badge (Opcional)</label>
-            <select className="input-field" value={badge} onChange={e => setBadge(e.target.value)}>
-              <option value="">Selecione uma categoria...</option>
-              {BADGES.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
+            <CustomSelect 
+              value={badge} 
+              onChange={e => setBadge(e.target.value)}
+              options={BADGES.map(b => ({ value: b, label: b }))}
+              placeholder="Selecione uma categoria..."
+            />
           </div>
 
           <div className="modal-footer" style={{ marginTop: '24px' }}>
