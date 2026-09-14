@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Settings2, PlusCircle, Trash2, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-react';
 import KudoCard from '../components/kudos/KudoCard';
 import KudosSettingsModal from '../components/kudos/KudosSettingsModal';
