@@ -6,7 +6,7 @@ import Confetti from 'react-confetti';
 
 const RouletteRoom = () => {
   const socket = useSocket();
-  const { user } = useAuth();
+  const { user, activeSquad } = useAuth();
   
   const [participants, setParticipants] = useState([]);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -29,20 +29,19 @@ const RouletteRoom = () => {
     "Na próxima eu ganho (ou não)! 🤫"
   ];
 
-  const connectionStateRef = useRef({});
+  const stateRef = useRef({ user, participants, activeSquad });
   useEffect(() => {
-    connectionStateRef.current = {
-      user
-    };
-  }, [user]);
+    stateRef.current = { user, participants, activeSquad };
+  }, [user, participants, activeSquad]);
 
   useEffect(() => {
-    if (!socket || !user) return;
+    if (!socket || !user || !activeSquad) return;
+    const squadId = activeSquad._id;
 
     const handleConnect = () => {
-      const state = connectionStateRef.current;
-      if (state.user) {
-        socket.emit('join_roulette', state.user);
+      const state = stateRef.current;
+      if (state.user && state.activeSquad) {
+        socket.emit('join_roulette', { user: state.user, squadId: state.activeSquad._id });
       }
     };
 
@@ -51,52 +50,51 @@ const RouletteRoom = () => {
       handleConnect();
     }
 
-    socket.on('roulette_state_update', ({ participants, isSpinning }) => {
+    const onStateUpdate = ({ participants, isSpinning }) => {
       setParticipants(participants);
       setIsSpinning(isSpinning);
-    });
+    };
+    socket.on('roulette_state_update', onStateUpdate);
 
-    socket.on('roulette_spin_start', ({ winnerIndex }) => {
+    const onSpinStart = ({ winnerIndex }) => {
       setIsSpinning(true);
       setWinner(null);
-      // Calcula a rotação para cair no índice selecionado.
-      // O segmento de cada participante é 360 / participants.length.
-      // Adicionamos algumas voltas completas (ex: 5 voltas = 1800 graus)
-      const numParticipants = participants.length || 1;
+      
+      const currentParticipants = stateRef.current.participants;
+      const numParticipants = currentParticipants.length || 1;
       const sliceAngle = 360 / numParticipants;
-      // Para o ponteiro no topo (que geralmente aponta pra 270 deg ou 0 deg dependendo do desenho)
-      // Ajuste: o segmento 0 começa no eixo X e vai descendo, se giramos... vamos simplificar:
-      // Apenas fazemos um giro aleatório dentro do segmento do winner.
       const spinRotations = 360 * 5; // 5 voltas
       
-      // Ajuste básico: a roda css vai usar conic-gradient onde index 0 é 0-X deg
       const targetAngle = 360 - (winnerIndex * sliceAngle) - (sliceAngle / 2);
       
       setRotationDegrees(prev => prev + spinRotations + targetAngle - (prev % 360));
-    });
+    };
+    socket.on('roulette_spin_start', onSpinStart);
 
-    socket.on('roulette_spin_end', ({ winner }) => {
+    const onSpinEnd = ({ winner }) => {
       setIsSpinning(false);
       setWinner(winner);
       
-      const isMe = user && (winner.id === (user.id || user.uid));
+      const currentUser = stateRef.current.user;
+      const isMe = currentUser && (winner.id === (currentUser.id || currentUser.uid));
       const phrases = isMe ? winnerPhrases : loserPhrases;
       setFunnyPhrase(phrases[Math.floor(Math.random() * phrases.length)]);
       setShowWinnerModal(true);
-    });
+    };
+    socket.on('roulette_spin_end', onSpinEnd);
 
     return () => {
-      socket.emit('leave_roulette');
+      socket.emit('leave_roulette', { squadId });
       socket.off('connect', handleConnect);
-      socket.off('roulette_state_update');
-      socket.off('roulette_spin_start');
-      socket.off('roulette_spin_end');
+      socket.off('roulette_state_update', onStateUpdate);
+      socket.off('roulette_spin_start', onSpinStart);
+      socket.off('roulette_spin_end', onSpinEnd);
     };
-  }, [socket, user, participants.length]);
+  }, [socket, user?.id, user?.uid, activeSquad?._id]);
 
   const handleSpin = () => {
-    if (participants.length === 0 || isSpinning) return;
-    socket.emit('spin_roulette');
+    if (participants.length === 0 || isSpinning || !activeSquad) return;
+    socket.emit('spin_roulette', { squadId: activeSquad._id });
   };
 
   const colors = [

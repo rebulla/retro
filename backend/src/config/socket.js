@@ -15,9 +15,8 @@ let io;
 // rooms[roomId] = { ... }
 const rooms = {};
 
-// Roulette Room State
-let rouletteParticipants = {};
-let isSpinning = false;
+// Roulette Room State (per squad)
+const rouletteRooms = {}; // { squadId: { participants: {}, isSpinning: false } }
 
 const initSocket = (server) => {
   const allowedOrigins = [
@@ -207,45 +206,62 @@ const initSocket = (server) => {
     });
 
     // 8. Roulette Events
-    socket.on('join_roulette', (user) => {
-      socket.join('roulette_room');
-      rouletteParticipants[socket.id] = { id: user.id, name: user.name, avatar: user.avatar };
-      io.to('roulette_room').emit('roulette_state_update', {
-        participants: Object.values(rouletteParticipants),
-        isSpinning
+    socket.on('join_roulette', ({ user, squadId }) => {
+      if (!squadId) return;
+      const roomName = `roulette_room_${squadId}`;
+      socket.join(roomName);
+      
+      if (!rouletteRooms[squadId]) {
+        rouletteRooms[squadId] = { participants: {}, isSpinning: false };
+      }
+      
+      rouletteRooms[squadId].participants[socket.id] = { id: user.id, name: user.name, avatar: user.avatar };
+      io.to(roomName).emit('roulette_state_update', {
+        participants: Object.values(rouletteRooms[squadId].participants),
+        isSpinning: rouletteRooms[squadId].isSpinning
       });
     });
 
-    socket.on('leave_roulette', () => {
-      socket.leave('roulette_room');
-      delete rouletteParticipants[socket.id];
-      io.to('roulette_room').emit('roulette_state_update', {
-        participants: Object.values(rouletteParticipants),
-        isSpinning
-      });
+    socket.on('leave_roulette', ({ squadId }) => {
+      if (!squadId) return;
+      const roomName = `roulette_room_${squadId}`;
+      socket.leave(roomName);
+      
+      if (rouletteRooms[squadId] && rouletteRooms[squadId].participants[socket.id]) {
+        delete rouletteRooms[squadId].participants[socket.id];
+        io.to(roomName).emit('roulette_state_update', {
+          participants: Object.values(rouletteRooms[squadId].participants),
+          isSpinning: rouletteRooms[squadId].isSpinning
+        });
+      }
     });
 
-    socket.on('spin_roulette', () => {
-      if (isSpinning) return;
-      isSpinning = true;
-      const participantsList = Object.values(rouletteParticipants);
+    socket.on('spin_roulette', ({ squadId }) => {
+      if (!squadId || !rouletteRooms[squadId]) return;
+      if (rouletteRooms[squadId].isSpinning) return;
+      
+      rouletteRooms[squadId].isSpinning = true;
+      const participantsList = Object.values(rouletteRooms[squadId].participants);
       if (participantsList.length === 0) {
-        isSpinning = false;
+        rouletteRooms[squadId].isSpinning = false;
         return;
       }
       
       const winnerIndex = Math.floor(Math.random() * participantsList.length);
       const winner = participantsList[winnerIndex];
       
-      io.to('roulette_room').emit('roulette_spin_start', { winnerIndex });
+      const roomName = `roulette_room_${squadId}`;
+      io.to(roomName).emit('roulette_spin_start', { winnerIndex });
       
       // Assume animation takes 5 seconds
       setTimeout(async () => {
-        isSpinning = false;
+        if (rouletteRooms[squadId]) {
+          rouletteRooms[squadId].isSpinning = false;
+        }
         
         // Salva na Sprint ativa o vencedor
         try {
-          const activeSprint = await Sprint.findOne({ isActive: true });
+          const activeSprint = await Sprint.findOne({ isActive: true, squadId });
           if (activeSprint) {
             activeSprint.themeResponsible = {
               name: winner.name,
@@ -257,7 +273,7 @@ const initSocket = (server) => {
           console.error("Erro ao salvar responsável pela sprint após roleta:", err);
         }
 
-        io.to('roulette_room').emit('roulette_spin_end', { winner });
+        io.to(roomName).emit('roulette_spin_end', { winner });
       }, 5000);
     });
 
@@ -271,12 +287,14 @@ const initSocket = (server) => {
       console.log(`Usuário desconectado (Socket ID: ${socket.id})`);
       
       // Remove from roulette
-      if (rouletteParticipants[socket.id]) {
-        delete rouletteParticipants[socket.id];
-        io.to('roulette_room').emit('roulette_state_update', {
-          participants: Object.values(rouletteParticipants),
-          isSpinning
-        });
+      for (const squadId in rouletteRooms) {
+        if (rouletteRooms[squadId].participants[socket.id]) {
+          delete rouletteRooms[squadId].participants[socket.id];
+          io.to(`roulette_room_${squadId}`).emit('roulette_state_update', {
+            participants: Object.values(rouletteRooms[squadId].participants),
+            isSpinning: rouletteRooms[squadId].isSpinning
+          });
+        }
       }
       
       // Find poker room and remove user
