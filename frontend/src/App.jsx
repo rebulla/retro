@@ -11,6 +11,7 @@ import PendingAccess from './pages/PendingAccess';
 import AdminArea from './pages/AdminArea';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -46,45 +47,47 @@ const App = () => {
   }, []);
 
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/pending" element={
-              <ProtectedRoute allowedRoles={['user', 'admin']}><PendingAccess /></ProtectedRoute>
-            } />
-            
-            {/* Protected Routes wrapped in Layout */}
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              {/* Dashboard, Kudos, Retro are for admin/user only */}
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={
-                <ProtectedRoute allowedRoles={['admin', 'user']}><Dashboard /></ProtectedRoute>
-              } />
-              <Route path="kudos" element={
-                <ProtectedRoute allowedRoles={['admin', 'user']}><KudosWall /></ProtectedRoute>
-              } />
-              <Route path="retro" element={
-                <ProtectedRoute allowedRoles={['admin', 'user']}><RetroBoard /></ProtectedRoute>
+    <SettingsProvider>
+      <AuthProvider>
+        <SocketProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/pending" element={
+                <ProtectedRoute allowedRoles={['user', 'admin']}><PendingAccess /></ProtectedRoute>
               } />
               
-              {/* Poker is open to guests as well */}
-              <Route path="poker" element={<PokerRoom />} />
-              
-              <Route path="roulette" element={
-                <ProtectedRoute allowedRoles={['admin', 'user']}><RouletteRoom /></ProtectedRoute>
-              } />
+              {/* Protected Routes wrapped in Layout */}
+              <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                {/* Dashboard, Kudos, Retro are for admin/user only */}
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={
+                  <ProtectedRoute allowedRoles={['admin', 'user']}><Dashboard /></ProtectedRoute>
+                } />
+                <Route path="kudos" element={
+                  <ProtectedRoute allowedRoles={['admin', 'user']}><KudosWall /></ProtectedRoute>
+                } />
+                <Route path="retro" element={
+                  <ProtectedRoute allowedRoles={['admin', 'user']}><RetroBoard /></ProtectedRoute>
+                } />
+                
+                {/* Poker is open to guests as well */}
+                <Route path="poker" element={<PokerRoom />} />
+                
+                <Route path="roulette" element={
+                  <ProtectedRoute allowedRoles={['admin', 'user']}><RouletteRoom /></ProtectedRoute>
+                } />
 
-              <Route path="admin" element={
-                <ProtectedRoute allowedRoles={['admin']}><AdminArea /></ProtectedRoute>
-              } />
-            </Route>
-            
-          </Routes>
-        </Router>
-      </SocketProvider>
-    </AuthProvider>
+                <Route path="admin" element={
+                  <ProtectedRoute allowedRoles={['admin']}><AdminArea /></ProtectedRoute>
+                } />
+              </Route>
+              
+            </Routes>
+          </Router>
+        </SocketProvider>
+      </AuthProvider>
+    </SettingsProvider>
   );
 };
 

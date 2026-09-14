@@ -34,10 +34,27 @@ const RetroBoard = () => {
     }
   }, [activeSquad]);
 
+  const connectionStateRef = useRef({});
+  useEffect(() => {
+    connectionStateRef.current = {
+      currentRetroId: currentRetro?._id
+    };
+  }, [currentRetro?._id]);
+
   useEffect(() => {
     if (!socket || !currentRetro) return;
 
-    socket.emit('join_retro', currentRetro._id);
+    const handleConnect = () => {
+      const state = connectionStateRef.current;
+      if (state.currentRetroId) {
+        socket.emit('join_retro', state.currentRetroId);
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    if (socket.connected) {
+      handleConnect();
+    }
 
     const handleRetroUpdated = (updatedRetro) => {
       // Update local state without losing focus or UI state heavily
@@ -50,7 +67,11 @@ const RetroBoard = () => {
     socket.on('retro_updated', handleRetroUpdated);
 
     return () => {
-      socket.emit('leave_retro', currentRetro._id);
+      const state = connectionStateRef.current;
+      if (state.currentRetroId) {
+        socket.emit('leave_retro', state.currentRetroId);
+      }
+      socket.off('connect', handleConnect);
       socket.off('retro_updated', handleRetroUpdated);
     };
   }, [socket, currentRetro?._id]);

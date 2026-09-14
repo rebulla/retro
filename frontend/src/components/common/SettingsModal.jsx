@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { X, Moon, Sun, Save } from 'lucide-react';
+import { X, Moon, Sun, Save, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const { user, updateUserName } = useAuth();
+  const { soundEnabled, updateSoundEnabled, volume, updateVolume } = useSettings();
   const [name, setName] = useState('');
   const [theme, setTheme] = useState('dark');
+  const [localSoundEnabled, setLocalSoundEnabled] = useState(soundEnabled);
+  const [localVolume, setLocalVolume] = useState(volume);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -15,7 +19,9 @@ const SettingsModal = ({ isOpen, onClose }) => {
     
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
-  }, [user, isOpen]);
+    setLocalSoundEnabled(soundEnabled);
+    setLocalVolume(volume);
+  }, [user, isOpen, soundEnabled, volume]);
 
   if (!isOpen) return null;
 
@@ -26,6 +32,9 @@ const SettingsModal = ({ isOpen, onClose }) => {
       // Atualizar tema no HTML
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
+      
+      updateSoundEnabled(localSoundEnabled);
+      updateVolume(localVolume);
       
       // Atualizar nome no Firebase/Convidado
       if (name.trim() !== user.name) {
@@ -82,6 +91,41 @@ const SettingsModal = ({ isOpen, onClose }) => {
               </button>
             </div>
           </div>
+          
+          <div className="form-group" style={{ marginTop: '16px' }}>
+            <label>Efeitos Sonoros (Sons do Sistema)</label>
+            <div className="theme-options">
+              <button 
+                className={`theme-btn ${localSoundEnabled ? 'active' : ''}`}
+                onClick={() => setLocalSoundEnabled(true)}
+              >
+                <Volume2 size={20} /> Ativado
+              </button>
+              <button 
+                className={`theme-btn ${!localSoundEnabled ? 'active' : ''}`}
+                onClick={() => setLocalSoundEnabled(false)}
+              >
+                <VolumeX size={20} /> Desativado
+              </button>
+            </div>
+          </div>
+
+          {localSoundEnabled && (
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Volume dos Sons</span>
+                <span>{localVolume}%</span>
+              </label>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={localVolume} 
+                onChange={(e) => setLocalVolume(Number(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer', marginTop: '8px' }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">

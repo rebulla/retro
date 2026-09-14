@@ -38,6 +38,12 @@ const calculateSummary = (participants) => {
 };
 
 const playReactionSound = (reactionType) => {
+  const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+  if (!soundEnabled) return;
+
+  const volumeStr = localStorage.getItem('soundVolume');
+  const volume = volumeStr !== null ? Number(volumeStr) : 10;
+
   try {
     let audioSrc = '';
     
@@ -78,7 +84,7 @@ const playReactionSound = (reactionType) => {
     }
 
     const audio = new Audio(audioSrc);
-    audio.volume = 0.5; // Ajuste o volume se necessário
+    audio.volume = volume / 100;
     audio.play().catch(e => console.log('Audio autoplay blocked', e));
   } catch (e) {
     console.log('Error playing audio', e);
@@ -106,11 +112,47 @@ const PokerRoom = () => {
   // Host state
   const [joinRequests, setJoinRequests] = useState([]);
 
+  const connectionStateRef = useRef({});
+  useEffect(() => {
+    connectionStateRef.current = {
+      role: user?.role,
+      guestStatus,
+      guestRoomId,
+      isGuestHost,
+      newRoomName,
+      roomId,
+      activeSquadName: activeSquad?.name,
+      user
+    };
+  }, [user, guestStatus, guestRoomId, isGuestHost, newRoomName, roomId, activeSquad]);
+
   useEffect(() => {
     if (!socket || !user) return;
 
+    const handleConnect = () => {
+      const state = connectionStateRef.current;
+      if (state.role === 'guest') {
+        socket.emit('get_active_rooms');
+        if (state.guestStatus === 'approved' && state.guestRoomId) {
+          socket.emit('join_room', { 
+            roomId: state.guestRoomId, 
+            user: state.isGuestHost ? { ...state.user, squadName: state.newRoomName } : state.user 
+          });
+        }
+      } else if (state.roomId) {
+        socket.emit('join_room', { 
+          roomId: state.roomId, 
+          user: { ...state.user, squadName: state.activeSquadName } 
+        });
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    if (socket.connected) {
+      handleConnect();
+    }
+
     if (user.role === 'guest') {
-      socket.emit('get_active_rooms');
       socket.on('active_rooms_list', (rooms) => {
         setActiveRooms(rooms);
       });
@@ -124,8 +166,6 @@ const PokerRoom = () => {
         setGuestStatus('denied');
         alert("Seu pedido para entrar foi recusado.");
       });
-    } else if (roomId) {
-      socket.emit('join_room', { roomId, user: { ...user, squadName: activeSquad?.name } });
     }
 
     socket.on('room_state_update', (newState) => {
@@ -141,7 +181,7 @@ const PokerRoom = () => {
 
     socket.on('guest_join_request', ({ guestId, guestName, roomId: reqRoomId }) => {
       // Host or guest creator sees this
-      if ((user.role !== 'guest' || isGuestHost) && reqRoomId === (user.role === 'guest' ? guestRoomId : roomId)) {
+      if ((user.role !== 'guest' || connectionStateRef.current.isGuestHost) && reqRoomId === (user.role === 'guest' ? connectionStateRef.current.guestRoomId : roomId)) {
         setJoinRequests(prev => [...prev, { guestId, guestName, reqRoomId }]);
       }
     });
@@ -156,11 +196,13 @@ const PokerRoom = () => {
     });
 
     return () => {
-      if (roomId) {
-        socket.emit('leave_room', { roomId });
-      } else if (guestRoomId) {
-        socket.emit('leave_room', { roomId: guestRoomId });
+      const state = connectionStateRef.current;
+      if (state.roomId) {
+        socket.emit('leave_room', { roomId: state.roomId });
+      } else if (state.guestRoomId) {
+        socket.emit('leave_room', { roomId: state.guestRoomId });
       }
+      socket.off('connect', handleConnect);
       socket.off('active_rooms_list');
       socket.off('guest_approved');
       socket.off('guest_denied');
@@ -168,7 +210,7 @@ const PokerRoom = () => {
       socket.off('guest_join_request');
       socket.off('reaction_received');
     };
-  }, [socket, user, roomId, activeSquad, isGuestHost, guestRoomId]);
+  }, [socket, user, roomId]);
 
   const getCurrentRoomId = () => {
     return user.role === 'guest' ? guestRoomId : roomId;

@@ -29,10 +29,27 @@ const RouletteRoom = () => {
     "Na próxima eu ganho (ou não)! 🤫"
   ];
 
+  const connectionStateRef = useRef({});
+  useEffect(() => {
+    connectionStateRef.current = {
+      user
+    };
+  }, [user]);
+
   useEffect(() => {
     if (!socket || !user) return;
 
-    socket.emit('join_roulette', user);
+    const handleConnect = () => {
+      const state = connectionStateRef.current;
+      if (state.user) {
+        socket.emit('join_roulette', state.user);
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    if (socket.connected) {
+      handleConnect();
+    }
 
     socket.on('roulette_state_update', ({ participants, isSpinning }) => {
       setParticipants(participants);
@@ -70,6 +87,7 @@ const RouletteRoom = () => {
 
     return () => {
       socket.emit('leave_roulette');
+      socket.off('connect', handleConnect);
       socket.off('roulette_state_update');
       socket.off('roulette_spin_start');
       socket.off('roulette_spin_end');

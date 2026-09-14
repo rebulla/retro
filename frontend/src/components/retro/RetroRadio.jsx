@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import YouTube from 'react-youtube';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Music, Play, Pause, Settings, Check } from 'lucide-react';
+import { useSettings } from '../../contexts/SettingsContext';
+import { Music, Play, Pause, Settings, Check, Volume2, VolumeX } from 'lucide-react';
 import './RetroRadio.css';
 
 const extractYouTubeId = (url) => {
@@ -26,6 +27,7 @@ const extractYouTubeId = (url) => {
 const RetroRadio = ({ retroId }) => {
   const socket = useSocket();
   const { user } = useAuth();
+  const { volume, updateVolume, soundEnabled, updateSoundEnabled } = useSettings();
   
   const [radioState, setRadioState] = useState({
     url: '',
@@ -44,6 +46,22 @@ const RetroRadio = ({ retroId }) => {
   useEffect(() => {
     radioStateRef.current = radioState;
   }, [radioState]);
+
+  useEffect(() => {
+    if (playerReady && playerRef.current) {
+      const player = playerRef.current;
+      try {
+        if (!soundEnabled) {
+          player.mute();
+        } else {
+          player.unMute();
+          player.setVolume(volume);
+        }
+      } catch (e) {
+        console.warn('YouTube Player volume sync ignored', e);
+      }
+    }
+  }, [volume, soundEnabled, playerReady]);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'scrum_master';
 
@@ -88,6 +106,17 @@ const RetroRadio = ({ retroId }) => {
   const handleReady = (event) => {
     playerRef.current = event.target;
     setPlayerReady(true);
+    
+    try {
+      if (!soundEnabled) {
+        event.target.mute();
+      } else {
+        event.target.unMute();
+        event.target.setVolume(volume);
+      }
+    } catch (e) {
+      console.warn('YouTube Player initial volume set ignored', e);
+    }
     
     // Use the ref to ensure we have the absolute latest state when the player becomes ready
     const currentRadioState = radioStateRef.current;
@@ -163,6 +192,7 @@ const RetroRadio = ({ retroId }) => {
       fs: 0,
       rel: 0,
       modestbranding: 1,
+      origin: window.location.origin,
       ...(ytInfo?.type === 'playlist' ? { listType: 'playlist', list: ytInfo.id } : {})
     },
   };
@@ -215,6 +245,27 @@ const RetroRadio = ({ retroId }) => {
                   <Play size={24} fill="currentColor" style={{ marginLeft: '4px' }} />
                 </button>
               )}
+            </div>
+          )}
+          
+          {radioState.url && playerReady && (
+            <div className="radio-volume-control" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', padding: '0 12px 12px 12px' }}>
+              <button 
+                onClick={() => updateSoundEnabled(!soundEnabled)} 
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                title={soundEnabled ? 'Desativar Som' : 'Ativar Som'}
+              >
+                {soundEnabled && volume > 0 ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              </button>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={volume}
+                onChange={(e) => updateVolume(Number(e.target.value))}
+                disabled={!soundEnabled}
+                style={{ flex: 1, cursor: soundEnabled ? 'pointer' : 'not-allowed' }}
+              />
             </div>
           )}
           

@@ -27,12 +27,18 @@ const BurnoutOverlay = () => {
   }, [isActive]);
 
   const extinguishFlame = (id) => {
-    try {
-      const audio = new Audio('/sounds/fire-whooshing.mp3');
-      audio.volume = 0.4;
-      audio.play().catch(e => console.log('Audio autoplay blocked', e));
-    } catch (e) {
-      console.log('Error playing audio', e);
+    const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    const volumeStr = localStorage.getItem('soundVolume');
+    const volume = volumeStr !== null ? Number(volumeStr) : 10;
+
+    if (soundEnabled) {
+      try {
+        const audio = new Audio('/sounds/fire-whooshing.mp3');
+        audio.volume = (volume / 100) * 0.8;
+        audio.play().catch(e => console.log('Audio autoplay blocked', e));
+      } catch (e) {
+        console.log('Error playing audio', e);
+      }
     }
 
     setFlames(prev => {
@@ -47,13 +53,19 @@ const BurnoutOverlay = () => {
   const handleSuccess = () => {
     setIsResolved(true);
     
+    const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    const volumeStr = localStorage.getItem('soundVolume');
+    const volume = volumeStr !== null ? Number(volumeStr) : 10;
+
     // Play fine.mp3
-    try {
-      const audio = new Audio('/sounds/fine.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log('Audio autoplay blocked', e));
-    } catch (e) {
-      console.log('Error playing audio', e);
+    if (soundEnabled) {
+      try {
+        const audio = new Audio('/sounds/fine.mp3');
+        audio.volume = volume / 100;
+        audio.play().catch(e => console.log('Audio autoplay blocked', e));
+      } catch (e) {
+        console.log('Error playing audio', e);
+      }
     }
 
     // Reset after 4 seconds
